@@ -1,0 +1,38 @@
+{
+    "name": "@poker-lab/web",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "test": "vitest run",
+        "prisma:push": "prisma db push",
+        "prisma:reset": "prisma migrate reset --force",
+        "prisma:studio": "prisma studio",
+        "prisma:generate": "prisma generate"
+    },
+    "dependencies": {
+        "@poker-lab/shared": "*",
+        "@poker-lab/parser": "*",
+        "@poker-lab/equity": "*",
+        "@prisma/client": "^5.7.0",
+        "next": "^14.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "recharts": "^2.10.0",
+        "clsx": "^2.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.32",
+        "prisma": "^5.7.0",
+        "tailwindcss": "^3.4.0",
+        "typescript": "^5.3.0",
+        "vitest": "^1.0.0"
+    }
+}

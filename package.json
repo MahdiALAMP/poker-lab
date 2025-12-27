@@ -1,0 +1,19 @@
+{
+  "name": "poker-lab",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@poker-lab/web",
+    "build": "npm run build --workspace=@poker-lab/web",
+    "test": "npm run test --workspaces --if-present",
+    "db:push": "npm run prisma:push --workspace=@poker-lab/web",
+    "db:reset": "npm run prisma:reset --workspace=@poker-lab/web",
+    "db:studio": "npm run prisma:studio --workspace=@poker-lab/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

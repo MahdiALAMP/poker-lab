@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Hand {
+  id          String   @id @default(cuid())
+  siteHandId  String   @unique
+  timestamp   DateTime
+  stakes      String   // e.g., "$0.25/$0.50"
+  currency    String   @default("USD")
+  tableName   String
+  maxSeats    Int
+  buttonSeat  Int
+  smallBlind  Float
+  bigBlind    Float
+  ante        Float    @default(0)
+  
+  // Board cards stored as string, e.g., "Ah Kd 5c"
+  boardFlop   String?
+  boardTurn   String?
+  boardRiver  String?
+  
+  potTotal    Float
+  rake        Float    @default(0)
+  
+  // Relations
+  players     PlayerInHand[]
+  actions     Action[]
+  
+  // Indexes for common queries
+  @@index([timestamp])
+}
+
+model PlayerInHand {
+  id            String  @id @default(cuid())
+  handId        String
+  hand          Hand    @relation(fields: [handId], references: [id], onDelete: Cascade)
+  
+  seatNumber    Int
+  playerName    String
+  position      String  // BTN, SB, BB, UTG, etc.
+  startingStack Float
+  
+  // Hole cards (if shown), e.g., "Ah Kd"
+  holeCards     String?
+  
+  // Result: positive = won, negative = lost
+  finalResult   Float   @default(0)
+  
+  // Is this the hero player?
+  isHero        Boolean @default(false)
+  
+  @@index([playerName])
+  @@index([position])
+  @@index([handId])
+}
+
+model Action {
+  id              String @id @default(cuid())
+  handId          String
+  hand            Hand   @relation(fields: [handId], references: [id], onDelete: Cascade)
+  
+  street          String // PREFLOP, FLOP, TURN, RIVER
+  sequence        Int    // Order of action within the hand
+  actorName       String
+  actionType      String // post, fold, check, call, bet, raise, all-in
+  amount          Float  @default(0)
+  potAfterAction  Float
+  isAllIn         Boolean @default(false)
+  
+  @@index([handId])
+  @@index([street])
+}
