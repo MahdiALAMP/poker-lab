@@ -9,6 +9,7 @@ const navItems = [
     { href: '/upload', label: 'Import' },
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/hands', label: 'Hands' },
+    { href: '/hands/new', label: 'New Hand' },
     { href: '/trainer', label: 'Trainer' },
 ]
 

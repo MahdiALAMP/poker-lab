@@ -45,7 +45,7 @@ interface SessionResult {
 
 function CardDisplay({ card }: { card: string }) {
     const suit = card[1]?.toLowerCase();
-    const rank = card[0];
+    const rank = card[0]?.toUpperCase();
 
     const colorClass = {
         h: 'card-hearts',
@@ -256,7 +256,7 @@ export default function TrainerPage() {
                             <div
                                 key={result.questionId}
                                 className={`p-3 rounded-lg flex items-center justify-between ${result.feedback.grade === 'green' ? 'grade-green' :
-                                        result.feedback.grade === 'yellow' ? 'grade-yellow' : 'grade-red'
+                                    result.feedback.grade === 'yellow' ? 'grade-yellow' : 'grade-red'
                                     }`}
                             >
                                 <span>Question {idx + 1}: {result.answer.toUpperCase()}</span>
@@ -287,14 +287,14 @@ export default function TrainerPage() {
                                 <div
                                     key={idx}
                                     className={`w-3 h-3 rounded-full ${idx < results.length
-                                            ? results[idx].feedback.grade === 'green'
-                                                ? 'bg-green-500'
-                                                : results[idx].feedback.grade === 'yellow'
-                                                    ? 'bg-yellow-500'
-                                                    : 'bg-red-500'
-                                            : idx === currentIndex
-                                                ? 'bg-indigo-500'
-                                                : 'bg-slate-700'
+                                        ? results[idx].feedback.grade === 'green'
+                                            ? 'bg-green-500'
+                                            : results[idx].feedback.grade === 'yellow'
+                                                ? 'bg-yellow-500'
+                                                : 'bg-red-500'
+                                        : idx === currentIndex
+                                            ? 'bg-indigo-500'
+                                            : 'bg-slate-700'
                                         }`}
                                 />
                             ))}
@@ -393,21 +393,21 @@ export default function TrainerPage() {
                         </div>
                     ) : (
                         <div className={`glass-card p-6 animate-fade-in ${currentFeedback.grade === 'green' ? 'border-green-500/50' :
-                                currentFeedback.grade === 'yellow' ? 'border-yellow-500/50' : 'border-red-500/50'
+                            currentFeedback.grade === 'yellow' ? 'border-yellow-500/50' : 'border-red-500/50'
                             }`}>
                             {/* Grade Header */}
                             <div className={`flex items-center gap-3 mb-4 pb-4 border-b ${currentFeedback.grade === 'green' ? 'border-green-500/30' :
-                                    currentFeedback.grade === 'yellow' ? 'border-yellow-500/30' : 'border-red-500/30'
+                                currentFeedback.grade === 'yellow' ? 'border-yellow-500/30' : 'border-red-500/30'
                                 }`}>
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentFeedback.grade === 'green' ? 'bg-green-500/20' :
-                                        currentFeedback.grade === 'yellow' ? 'bg-yellow-500/20' : 'bg-red-500/20'
+                                    currentFeedback.grade === 'yellow' ? 'bg-yellow-500/20' : 'bg-red-500/20'
                                     }`}>
                                     {currentFeedback.grade === 'green' ? '✓' :
                                         currentFeedback.grade === 'yellow' ? '~' : '✗'}
                                 </div>
                                 <div>
                                     <p className={`font-semibold ${currentFeedback.grade === 'green' ? 'text-green-400' :
-                                            currentFeedback.grade === 'yellow' ? 'text-yellow-400' : 'text-red-400'
+                                        currentFeedback.grade === 'yellow' ? 'text-yellow-400' : 'text-red-400'
                                         }`}>
                                         {currentFeedback.grade === 'green' ? 'Good Decision' :
                                             currentFeedback.grade === 'yellow' ? 'Marginal' : 'Questionable'}

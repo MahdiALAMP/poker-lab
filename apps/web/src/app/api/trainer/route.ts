@@ -74,10 +74,7 @@ function classifyBoardTexture(board: string): string {
 
 // Generate preflop line description
 function describePreflopLine(actions: { actorName: string; actionType: string; amount: number }[], heroName: string): string {
-    const nonPostActions = actions.filter(a => a.actionType !== 'post');
-
-    const raises = nonPostActions.filter(a => a.actionType === 'raise');
-    const calls = nonPostActions.filter(a => a.actionType === 'call');
+    const raises = actions.filter(a => a.actionType === 'raise');
 
     if (raises.length === 0) {
         return 'Limped pot';
@@ -112,10 +109,9 @@ function getVillainRange(position: string, is3Better: boolean): string {
     return ranges[position] || 'AA-TT, AKs-ATs, KQs, AKo-AJo';
 }
 
-export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams;
+export async function GET(_request: NextRequest) {
+    const searchParams = _request.nextUrl.searchParams;
     const heroName = searchParams.get('hero');
-    const scenario = searchParams.get('scenario') || 'flop_cbet_defense';
     const count = parseInt(searchParams.get('count') || '10');
 
     if (!heroName) {
@@ -245,7 +241,7 @@ export async function POST(request: NextRequest) {
     // Grade an answer
     try {
         const body = await request.json();
-        const { questionId, answer, heroCards, board, villainRange, potOdds, mdf, betSizeFaced, potSize } = body;
+        const { answer, heroCards, board, villainRange, potOdds, mdf } = body;
 
         // Calculate equity if we have hero cards
         let equity = null;
@@ -286,7 +282,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Grading logic
-        const betSizePercent = (betSizeFaced / (potSize - betSizeFaced)) * 100;
+
 
         if (answer === 'fold') {
             if (equity !== null && equity < potOdds - 5) {

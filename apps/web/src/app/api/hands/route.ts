@@ -90,3 +90,73 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const { hand } = body;
+
+        if (!hand) {
+            return NextResponse.json({ error: 'No hand data provided' }, { status: 400 });
+        }
+
+        // Generate a random ID for siteHandId since it's manual
+        const siteHandId = `MANUAL_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+
+        // Create hand with players and actions
+        const savedHand = await prisma.hand.create({
+            data: {
+                siteHandId,
+                timestamp: new Date(),
+                stakes: hand.stakes || '$0.25/$0.50',
+                currency: 'USD',
+                tableName: 'Manual Lab',
+                maxSeats: 6,
+                buttonSeat: 1,
+                smallBlind: hand.smallBlind || 0.25,
+                bigBlind: hand.bigBlind || 0.50,
+                ante: 0,
+                boardFlop: hand.boardFlop || null,
+                boardTurn: hand.boardTurn || null,
+                boardRiver: hand.boardRiver || null,
+                potTotal: hand.potTotal || 0,
+                rake: 0,
+                players: {
+                    create: hand.players.map((p: any) => ({
+                        seatNumber: p.seatNumber,
+                        playerName: p.playerName,
+                        position: p.position,
+                        startingStack: p.startingStack,
+                        holeCards: p.holeCards || null,
+                        finalResult: p.finalResult || 0,
+                        isHero: p.isHero || false,
+                    })),
+                },
+                actions: {
+                    create: hand.actions.map((a: any) => ({
+                        street: a.street,
+                        sequence: a.sequence,
+                        actorName: a.actorName,
+                        actionType: a.actionType,
+                        amount: a.amount,
+                        potAfterAction: a.potAfterAction,
+                        isAllIn: a.isAllIn || false,
+                    })),
+                },
+            },
+            include: {
+                players: true,
+                actions: true,
+            }
+        });
+
+        return NextResponse.json({ success: true, hand: savedHand });
+    } catch (error) {
+        console.error('Save manual hand error:', error);
+        return NextResponse.json(
+            { error: 'Failed to save hand', details: String(error) },
+            { status: 500 }
+        );
+    }
+}
+

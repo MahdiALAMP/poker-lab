@@ -63,7 +63,7 @@ const streetColors: Record<string, string> = {
 
 function CardDisplay({ card }: { card: string }) {
     const suit = card[1]?.toLowerCase();
-    const rank = card[0];
+    const rank = card[0]?.toUpperCase();
 
     const colorClass = {
         h: 'card-hearts',
@@ -109,7 +109,7 @@ function ActionDisplay({ action, bigBlind }: { action: Action; bigBlind: number 
                 <span className="font-medium text-white w-24 truncate">{action.actorName}</span>
                 <span className={`font-medium ${actionColors[action.actionType] || 'text-white'}`}>
                     {action.actionType.toUpperCase()}
-                    {action.isAllIn && ' (ALL-IN)'}
+                    {action.isAllIn && action.actionType !== 'all-in' && ' (ALL-IN)'}
                 </span>
                 {action.amount > 0 && (
                     <span className="text-slate-400 text-sm">{formatAmount(action.amount)}</span>
@@ -171,11 +171,39 @@ export default function HandDetailPage() {
 
                 // Set default villain range based on action
                 const preflopActions = data.hand?.actions.filter((a: Action) => a.street === 'PREFLOP') || [];
-                const lastRaise = preflopActions.filter((a: Action) => a.actionType === 'raise').pop();
+                const raises = preflopActions.filter((a: Action) => a.actionType === 'raise');
+                const lastRaise = raises.slice(-1)[0];
+
                 if (lastRaise) {
                     const raiserPlayer = data.hand?.players.find((p: PlayerInHand) => p.playerName === lastRaise.actorName);
                     if (raiserPlayer && !raiserPlayer.isHero) {
+                        // Someone else raised, use their aggressive range
                         setVillainRange(getDefaultRange(raiserPlayer.position, true));
+                    } else if (raiserPlayer && raiserPlayer.isHero) {
+                        // Hero raised, find the first caller (Villain)
+                        const firstCaller = preflopActions.find((a: Action) =>
+                            (a.actionType === 'call' || a.actionType === 'all-in') &&
+                            a.sequence > lastRaise.sequence &&
+                            a.actorName !== lastRaise.actorName
+                        );
+                        if (firstCaller) {
+                            const callerPlayer = data.hand?.players.find((p: PlayerInHand) => p.playerName === firstCaller.actorName);
+                            if (callerPlayer) {
+                                setVillainRange(getDefaultRange(callerPlayer.position, false));
+                            }
+                        }
+                    }
+                } else {
+                    // Limped pot: find the first caller who is not Hero
+                    const firstLimper = preflopActions.find((a: Action) =>
+                        a.actionType === 'call' &&
+                        !data.hand?.players.find((p: PlayerInHand) => p.playerName === a.actorName)?.isHero
+                    );
+                    if (firstLimper) {
+                        const limperPlayer = data.hand?.players.find((p: PlayerInHand) => p.playerName === firstLimper.actorName);
+                        if (limperPlayer) {
+                            setVillainRange(getDefaultRange(limperPlayer.position, false));
+                        }
                     }
                 }
             })
@@ -252,7 +280,6 @@ export default function HandDetailPage() {
         return acc;
     }, {} as Record<string, Action[]>);
 
-    const hero = hand.players.find(p => p.isHero);
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -316,18 +343,18 @@ export default function HandDetailPage() {
                     {/* Street Navigation */}
                     <div className="flex gap-2">
                         {streetOrder.map(street => {
-                            const hasActions = groupedActions[street]?.length > 0;
-                            const hasBoard = street === 'FLOP' ? hand.boardFlop : street === 'TURN' ? hand.boardTurn : street === 'RIVER' ? hand.boardRiver : true;
+                            const hasActions = (groupedActions[street]?.length ?? 0) > 0;
+                            const hasBoard = street === 'FLOP' ? !!hand.boardFlop : street === 'TURN' ? !!hand.boardTurn : street === 'RIVER' ? !!hand.boardRiver : true;
 
-                            if (!hasActions && street !== 'PREFLOP') return null;
+                            if (!hasActions && !hasBoard && street !== 'PREFLOP') return null;
 
                             return (
                                 <button
                                     key={street}
                                     onClick={() => setCurrentStreet(street)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentStreet === street
-                                            ? streetColors[street]
-                                            : 'bg-slate-800/50 text-slate-400 hover:text-white'
+                                        ? streetColors[street]
+                                        : 'bg-slate-800/50 text-slate-400 hover:text-white'
                                         }`}
                                 >
                                     {street}
@@ -413,21 +440,28 @@ export default function HandDetailPage() {
                     </div>
 
                     {/* Calculate Button */}
-                    <button
-                        onClick={calculateEquity}
-                        disabled={calculating || !heroCards[0] || !heroCards[1] || !villainRange}
-                        className="btn-primary w-full mb-4 disabled:opacity-50"
-                    >
-                        {calculating ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                Calculating...
-                            </span>
-                        ) : 'Calculate Equity'}
-                    </button>
+                    <div className="group relative">
+                        <button
+                            onClick={calculateEquity}
+                            disabled={calculating || !heroCards[0] || !heroCards[1] || !villainRange}
+                            className="btn-primary w-full mb-4 disabled:opacity-50"
+                        >
+                            {calculating ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    Calculating...
+                                </span>
+                            ) : 'Calculate Equity'}
+                        </button>
+                        {!villainRange && !calculating && (
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-xs text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700 shadow-xl">
+                                Enter a villain range to calculate
+                            </div>
+                        )}
+                    </div>
 
                     {/* Error */}
                     {equityError && (

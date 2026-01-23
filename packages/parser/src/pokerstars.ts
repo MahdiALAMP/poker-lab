@@ -1,7 +1,5 @@
 import {
     type Card,
-    type Rank,
-    type Suit,
     type Position,
     type Street,
     type ActionType,
@@ -79,7 +77,7 @@ export class PokerStarsParser {
         const timestampMatch = lines[0]?.match(TIMESTAMP_REGEX);
         let timestamp = new Date();
         if (timestampMatch) {
-            const [, date, time, tz] = timestampMatch;
+            const [, date, time] = timestampMatch;
             timestamp = new Date(`${date.replace(/\//g, '-')}T${time}`);
         }
 
@@ -134,6 +132,7 @@ export class PokerStarsParser {
         let pot = 0;
         const actions: ParsedAction[] = [];
         let sequence = 0;
+        const streetContributions = new Map<string, number>();
 
         for (const line of lines) {
             const blindMatch = line.match(BLIND_POST_REGEX);
@@ -141,6 +140,7 @@ export class PokerStarsParser {
                 const actor = blindMatch[1].trim();
                 const amount = parseFloat(blindMatch[2]);
                 pot += amount;
+                streetContributions.set(actor, (streetContributions.get(actor) || 0) + amount);
 
                 actions.push({
                     street: 'PREFLOP',
@@ -158,6 +158,7 @@ export class PokerStarsParser {
                 const actor = anteMatch[1].trim();
                 const amount = parseFloat(anteMatch[2]);
                 pot += amount;
+                streetContributions.set(actor, (streetContributions.get(actor) || 0) + amount);
 
                 actions.push({
                     street: 'PREFLOP',
@@ -195,6 +196,7 @@ export class PokerStarsParser {
             // Check for street transitions
             if (line.includes('*** FLOP ***')) {
                 currentStreet = 'FLOP';
+                streetContributions.clear();
                 const boardMatch = line.match(BOARD_REGEX);
                 if (boardMatch) {
                     const flopCards = this.parseCards(boardMatch[1]);
@@ -204,6 +206,7 @@ export class PokerStarsParser {
             }
             if (line.includes('*** TURN ***')) {
                 currentStreet = 'TURN';
+                streetContributions.clear();
                 // Turn card is in brackets after existing board
                 const turnMatch = line.match(/\] \[([^\]]+)\]/);
                 if (turnMatch) {
@@ -214,6 +217,7 @@ export class PokerStarsParser {
             }
             if (line.includes('*** RIVER ***')) {
                 currentStreet = 'RIVER';
+                streetContributions.clear();
                 const riverMatch = line.match(/\] \[([^\]]+)\]/);
                 if (riverMatch) {
                     const riverCards = this.parseCards(riverMatch[1]);
@@ -234,6 +238,9 @@ export class PokerStarsParser {
 
                 let actionType: ActionType;
                 let amount = 0;
+                let contribution = 0;
+
+                const prevContribution = streetContributions.get(actor) || 0;
 
                 switch (actionStr) {
                     case 'folds':
@@ -245,20 +252,25 @@ export class PokerStarsParser {
                     case 'calls':
                         actionType = 'call';
                         amount = parseFloat(actionMatch[3] || '0');
-                        pot += amount;
+                        contribution = amount;
+                        pot += contribution;
+                        streetContributions.set(actor, prevContribution + contribution);
                         break;
                     case 'bets':
                         actionType = 'bet';
                         amount = parseFloat(actionMatch[3] || '0');
-                        pot += amount;
+                        contribution = amount;
+                        pot += contribution;
+                        streetContributions.set(actor, contribution);
                         break;
                     case 'raises':
                         actionType = 'raise';
-                        // For raises, the "to" amount is the total bet
-                        // We need to compute the actual raise amount
+                        // For raises, the "to" amount is the total bet on this street
                         const toAmount = parseFloat(actionMatch[4] || actionMatch[3] || '0');
-                        amount = toAmount; // Store total bet size
-                        pot += toAmount; // Simplified - in reality need to track previous bet
+                        amount = toAmount;
+                        contribution = toAmount - prevContribution;
+                        pot += contribution;
+                        streetContributions.set(actor, toAmount);
                         break;
                     default:
                         continue;
@@ -278,12 +290,8 @@ export class PokerStarsParser {
 
         // Parse showdown results
         const winners: { name: string; amount: number }[] = [];
-        let inSummary = false;
 
         for (const line of lines) {
-            if (line.includes('*** SUMMARY ***')) {
-                inSummary = true;
-            }
 
             const collectedMatch = line.match(COLLECTED_REGEX);
             if (collectedMatch) {
