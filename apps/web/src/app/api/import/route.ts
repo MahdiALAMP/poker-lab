@@ -77,8 +77,10 @@ export async function POST(request: NextRequest) {
                     });
 
                     importedHands++;
+                    console.log(`Successfully imported hand ${hand.siteHandId}`);
                 } catch (error) {
-                    errors.push(`Failed to import hand ${hand.siteHandId}: ${error}`);
+                    console.error(`Error importing hand ${hand.siteHandId}:`, error);
+                    errors.push(`Failed to import hand ${hand.siteHandId}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
         }
