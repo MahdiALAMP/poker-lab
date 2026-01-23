@@ -8,11 +8,11 @@
         "start": "next start",
         "lint": "next lint",
         "test": "vitest run",
-        "prisma:push": "prisma db push",
-        "prisma:reset": "prisma migrate reset --force",
-        "prisma:studio": "prisma studio",
-        "prisma:generate": "prisma generate",
-        "postinstall": "prisma generate"
+        "prisma:push": "prisma db push --schema=../../prisma/schema.prisma",
+        "prisma:reset": "prisma migrate reset --force --schema=../../prisma/schema.prisma",
+        "prisma:studio": "prisma studio --schema=../../prisma/schema.prisma",
+        "prisma:generate": "prisma generate --schema=../../prisma/schema.prisma",
+        "postinstall": "prisma generate --schema=../../prisma/schema.prisma"
     },
     "dependencies": {
         "@poker-lab/shared": "*",
