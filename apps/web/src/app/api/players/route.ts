@@ -10,6 +10,7 @@ export async function GET() {
             take: 100,
         });
 
+        console.log(`Found ${players.length} unique players in database`);
         return NextResponse.json({
             players: players.map(p => ({
                 name: p.playerName,

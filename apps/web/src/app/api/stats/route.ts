@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        console.log(`Calculating stats for player: "${playerName}"`);
         // Get all hands where this player participated
         const playerHands = await prisma.playerInHand.findMany({
             where: { playerName },
@@ -27,6 +28,8 @@ export async function GET(request: NextRequest) {
                 },
             },
         });
+
+        console.log(`Found ${playerHands.length} hands for player: "${playerName}"`);
 
         if (playerHands.length === 0) {
             return NextResponse.json({
