@@ -153,8 +153,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, hand: savedHand });
     } catch (error) {
         console.error('Save manual hand error:', error);
+
+        const message = error instanceof Error ? error.message : String(error);
+        let details = 'Database request failed. Check the Vercel function logs for the server-side error.';
+
+        if (message.includes('Environment variable not found') && message.includes('DATABASE_URL')) {
+            details = 'DATABASE_URL is not configured for this deployment.';
+        } else if (message.includes('P2021') || (message.toLowerCase().includes('table') && message.toLowerCase().includes('does not exist'))) {
+            details = 'The PostgreSQL tables are missing. Run the Prisma schema setup against the production database.';
+        } else if (message.includes('P1001') || message.includes("Can't reach database server")) {
+            details = 'The app cannot reach the PostgreSQL database. Check DATABASE_URL and database availability.';
+        } else if (message.includes('P1000') || message.toLowerCase().includes('authentication failed')) {
+            details = 'PostgreSQL authentication failed. Check the credentials in DATABASE_URL.';
+        }
+
         return NextResponse.json(
-            { error: 'Failed to save hand', details: String(error) },
+            { error: 'Failed to save hand', details },
             { status: 500 }
         );
     }

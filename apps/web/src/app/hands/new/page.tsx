@@ -202,14 +202,14 @@ export default function NewHandPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error || 'Failed to save hand');
+                throw new Error(data.details || data.error || 'Failed to save hand');
             }
 
             router.push('/hands');
             router.refresh();
         } catch (error) {
             console.error('Save error:', error);
-            alert('Failed to save hand');
+            alert(error instanceof Error ? error.message : 'Failed to save hand');
         } finally {
             setSaving(false);
         }
