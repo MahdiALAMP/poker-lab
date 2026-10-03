@@ -200,9 +200,13 @@ export default function NewHandPage() {
                 body: JSON.stringify({ hand: handData }),
             });
             const data = await res.json();
-            if (data.success) {
-                router.push(`/hands/${data.hand.id}`);
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to save hand');
             }
+
+            router.push('/hands');
+            router.refresh();
         } catch (error) {
             console.error('Save error:', error);
             alert('Failed to save hand');
